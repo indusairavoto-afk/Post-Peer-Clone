@@ -29,27 +29,13 @@ router.get("/platforms/connected", requireAuth, async (req, res): Promise<void> 
   res.json({ platforms });
 });
 
-router.post("/platforms/connect", requireAuth, async (req, res): Promise<void> => {
-  const clerkId = (req as any).clerkId;
-  const { platform, accountName, accountHandle } = req.body;
+router.get("/platforms/:platform/oauth/start", requireAuth, async (req, res): Promise<void> => {
+  const platform = Array.isArray(req.params.platform) ? req.params.platform[0] : req.params.platform;
 
-  if (!platform || !accountName || !accountHandle) {
-    res.status(400).json({ error: "platform, accountName, and accountHandle are required" });
-    return;
-  }
-
-  await db.delete(connectedPlatformsTable)
-    .where(sql`${connectedPlatformsTable.userId} = ${clerkId} AND ${connectedPlatformsTable.platform} = ${platform}`);
-
-  const [connected] = await db.insert(connectedPlatformsTable).values({
-    userId: clerkId,
-    platform,
-    accountName,
-    accountHandle: accountHandle.replace(/^@/, ""),
-    status: "connected",
-  }).returning();
-
-  res.status(201).json(connected);
+  res.status(503).json({
+    error: "REAL_OAUTH_NOT_CONFIGURED",
+    message: `Real ${platform} authorization is not configured for this workspace yet.`,
+  });
 });
 
 router.delete("/platforms/:platform/disconnect", requireAuth, async (req, res): Promise<void> => {

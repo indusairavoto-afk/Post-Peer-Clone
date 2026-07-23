@@ -6,11 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface Platform {
-  id: string;
-  name: string;
-  icon: string;
-  color: string;
-  maxLength: number;
-  supportsMedia: boolean;
-}
+export type StartPlatformOAuth503 = {
+  error: string;
+  message: string;
+};

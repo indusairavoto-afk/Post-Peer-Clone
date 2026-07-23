@@ -39,8 +39,8 @@ PostMVP is a first-party social media publishing dashboard for composing, schedu
 - The existing pnpm workspace and artifact boundaries are preserved; no migration or restructuring was performed.
 - The web app is served at `/`, the API at `/api`, and the mockup server at `/__mockup`.
 - Browser authentication uses Clerk session cookies through the API proxy.
-- Platform connections are stored in PostMVP's own PostgreSQL database.
-- Publishing and scheduling are handled by PostMVP's own API and database; provider adapters can be added independently later.
+- Only provider-authorized accounts may be stored as `connected`; username-only records are `unverified` and cannot be used for publishing.
+- Real provider OAuth and publishing adapters are not configured yet; provider connections must be set up before an account can become connected.
 
 ## Product
 

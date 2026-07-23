@@ -150,24 +150,32 @@ paths:
               schema:
                 $ref: "#/components/schemas/ConnectedPlatformList"
 
-  /platforms/connect:
-    post:
-      operationId: connectPlatform
+  /platforms/{platform}/oauth/start:
+    get:
+      operationId: startPlatformOAuth
       tags: [platforms]
-      summary: Connect a social account to PostMVP
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/PlatformConnectInput"
+      summary: Start real social provider OAuth
+      parameters:
+        - name: platform
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
-        "201":
-          description: Connected platform
+        "302":
+          description: Redirect to the provider authorization page
+        "503":
+          description: Provider OAuth is not configured
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ConnectedPlatform"
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                required: [error, message]
 
   /platforms/{platform}/disconnect:
     delete:
@@ -372,21 +380,10 @@ components:
           type: string
         status:
           type: string
-          enum: [connected, disconnected]
+          enum: [connected, disconnected, unverified]
         connectedAt:
           type: string
       required: [id, platform, accountName, accountHandle, status, connectedAt]
-
-    PlatformConnectInput:
-      type: object
-      properties:
-        platform:
-          type: string
-        accountName:
-          type: string
-        accountHandle:
-          type: string
-      required: [platform, accountName, accountHandle]
 
     ConnectedPlatformList:
       type: object

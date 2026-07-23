@@ -8,7 +8,7 @@ export const connectedPlatformsTable = pgTable("connected_platforms", {
   platform: text("platform").notNull(),
   accountName: text("account_name").notNull(),
   accountHandle: text("account_handle").notNull(),
-  status: text("status").notNull().default("connected"),
+  status: text("status").notNull().default("unverified"),
   connectedAt: timestamp("connected_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

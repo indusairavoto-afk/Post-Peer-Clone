@@ -13,7 +13,7 @@ description: First-party social publishing app — Clerk auth, Express backend, 
 - Auth is cookie-based (Clerk session cookies on web) — do NOT add Bearer token handling to browser API calls
 - requireAuth middleware in artifacts/api-server/src/lib/auth.ts reads clerkId from getAuth(req).userId
 - getOrCreateUser() does JIT provisioning of local user record from Clerk ID
-- Platform connections are first-party account records stored in PostMVP's database; provider OAuth adapters can be added later without changing the product boundary
+- Only provider-authorized accounts may be marked connected; handle-only records remain unverified until an OAuth callback confirms the account
 - API keys are hashed (SHA-256) server-side, only full key shown once on creation
 
 ## DB Tables
@@ -32,4 +32,4 @@ description: First-party social publishing app — Clerk auth, Express backend, 
 - clerkProxyMiddleware mounted in app.ts before cors/body parsers
 - clerkAppearance uses shadcn theme with dark black/white dev-tool palette
 
-**Why:** PostMVP owns the product and should not depend on another social API provider; provider-specific OAuth and delivery can be introduced as independent adapters when each platform's credentials and policies are ready.
+**Why:** A username is not proof of account ownership. Provider-specific OAuth and delivery can be introduced as independent adapters when each platform's app credentials and policies are ready.
