@@ -1,22 +1,24 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: PostPeer unified social media API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: dashboard
+  - name: posts
+  - name: platforms
+  - name: apikeys
+  - name: user
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +26,222 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /posts:
+    get:
+      operationId: listPosts
+      tags: [posts]
+      summary: List all posts for the authenticated user
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, scheduled, published, failed]
+        - name: platform
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostList"
+    post:
+      operationId: createPost
+      tags: [posts]
+      summary: Create or schedule a post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostInput"
+      responses:
+        "201":
+          description: Created post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+
+  /posts/{id}:
+    get:
+      operationId: getPost
+      tags: [posts]
+      summary: Get a single post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        "404":
+          description: Not found
+    delete:
+      operationId: deletePost
+      tags: [posts]
+      summary: Delete a post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /platforms:
+    get:
+      operationId: listPlatforms
+      tags: [platforms]
+      summary: List all supported platforms
+      responses:
+        "200":
+          description: Supported platforms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformList"
+
+  /platforms/connected:
+    get:
+      operationId: listConnectedPlatforms
+      tags: [platforms]
+      summary: List user connected platforms
+      responses:
+        "200":
+          description: Connected platforms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectedPlatformList"
+
+  /platforms/connect:
+    post:
+      operationId: connectPlatform
+      tags: [platforms]
+      summary: Connect a social media platform
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlatformConnectInput"
+      responses:
+        "201":
+          description: Connected platform
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectedPlatform"
+
+  /platforms/{platform}/disconnect:
+    delete:
+      operationId: disconnectPlatform
+      tags: [platforms]
+      summary: Disconnect a platform
+      parameters:
+        - name: platform
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Disconnected
+
+  /api-keys:
+    get:
+      operationId: listApiKeys
+      tags: [apikeys]
+      summary: List user API keys
+      responses:
+        "200":
+          description: API keys
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyList"
+    post:
+      operationId: createApiKey
+      tags: [apikeys]
+      summary: Create a new API key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyInput"
+      responses:
+        "201":
+          description: Created API key (full key only shown once)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyCreated"
+
+  /api-keys/{id}:
+    delete:
+      operationId: deleteApiKey
+      tags: [apikeys]
+      summary: Delete an API key
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /user/profile:
+    get:
+      operationId: getUserProfile
+      tags: [user]
+      summary: Get current user profile and plan
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +249,218 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    DashboardStats:
+      type: object
+      properties:
+        totalPosts:
+          type: integer
+        publishedPosts:
+          type: integer
+        scheduledPosts:
+          type: integer
+        failedPosts:
+          type: integer
+        connectedPlatforms:
+          type: integer
+        totalDeliveries:
+          type: integer
+        creditsUsed:
+          type: integer
+        creditsTotal:
+          type: integer
+      required: [totalPosts, publishedPosts, scheduledPosts, failedPosts, connectedPlatforms, totalDeliveries, creditsUsed, creditsTotal]
+
+    Post:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        content:
+          type: string
+        platforms:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [draft, scheduled, published, failed]
+        scheduledAt:
+          type: ["string", "null"]
+        publishedAt:
+          type: ["string", "null"]
+        mediaUrls:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, userId, content, platforms, status, mediaUrls, createdAt, updatedAt]
+
+    PostList:
+      type: object
+      properties:
+        posts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Post"
+        total:
+          type: integer
+      required: [posts, total]
+
+    PostInput:
+      type: object
+      properties:
+        content:
+          type: string
+          minLength: 1
+        platforms:
+          type: array
+          items:
+            type: string
+          minItems: 1
+        scheduledAt:
+          type: ["string", "null"]
+        mediaUrls:
+          type: array
+          items:
+            type: string
+      required: [content, platforms]
+
+    Platform:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        icon:
+          type: string
+        color:
+          type: string
+        maxLength:
+          type: integer
+        supportsMedia:
+          type: boolean
+      required: [id, name, icon, color, maxLength, supportsMedia]
+
+    PlatformList:
+      type: object
+      properties:
+        platforms:
+          type: array
+          items:
+            $ref: "#/components/schemas/Platform"
+      required: [platforms]
+
+    ConnectedPlatform:
+      type: object
+      properties:
+        id:
+          type: integer
+        platform:
+          type: string
+        accountName:
+          type: string
+        accountHandle:
+          type: string
+        status:
+          type: string
+          enum: [connected, disconnected]
+        connectedAt:
+          type: string
+      required: [id, platform, accountName, accountHandle, status, connectedAt]
+
+    ConnectedPlatformList:
+      type: object
+      properties:
+        platforms:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConnectedPlatform"
+      required: [platforms]
+
+    PlatformConnectInput:
+      type: object
+      properties:
+        platform:
+          type: string
+        accountName:
+          type: string
+        accountHandle:
+          type: string
+      required: [platform, accountName, accountHandle]
+
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        keyPrefix:
+          type: string
+        lastUsedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        active:
+          type: boolean
+      required: [id, name, keyPrefix, createdAt, active]
+
+    ApiKeyList:
+      type: object
+      properties:
+        keys:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiKey"
+      required: [keys]
+
+    ApiKeyInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+      required: [name]
+
+    ApiKeyCreated:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        keyPrefix:
+          type: string
+        fullKey:
+          type: string
+        createdAt:
+          type: string
+        active:
+          type: boolean
+      required: [id, name, keyPrefix, fullKey, createdAt, active]
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        clerkId:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        plan:
+          type: string
+          enum: [free, starter, standard, pro]
+        createdAt:
+          type: string
+      required: [id, clerkId, email, name, plan, createdAt]

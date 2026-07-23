@@ -5,7 +5,9 @@
  * PostPeer unified social media API
  * OpenAPI spec version: 0.1.0
  */
+import type { Post } from './post';
 
-export interface HealthStatus {
-  status: string;
+export interface PostList {
+  posts: Post[];
+  total: number;
 }
