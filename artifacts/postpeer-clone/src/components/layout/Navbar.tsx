@@ -27,7 +27,7 @@ export default function Navbar() {
           <div className="w-8 h-8 rounded-md bg-white text-black flex items-center justify-center transition-transform group-hover:scale-105">
             <Flame size={20} className="fill-black" />
           </div>
-          <span className="font-bold text-xl tracking-tight text-white">PostPeer</span>
+          <span className="font-bold text-xl tracking-tight text-white">PostMVP</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">

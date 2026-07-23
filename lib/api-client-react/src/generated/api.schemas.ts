@@ -90,8 +90,10 @@ export interface ConnectedPlatform {
   connectedAt: string;
 }
 
-export interface OAuthUrl {
-  url: string;
+export interface PlatformConnectInput {
+  platform: string;
+  accountName: string;
+  accountHandle: string;
 }
 
 export interface ConnectedPlatformList {

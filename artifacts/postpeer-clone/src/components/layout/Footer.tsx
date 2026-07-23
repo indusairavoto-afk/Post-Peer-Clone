@@ -11,7 +11,7 @@ export default function Footer() {
               <div className="w-6 h-6 rounded bg-white text-black flex items-center justify-center">
                 <Flame size={14} className="fill-black" />
               </div>
-              <span className="font-bold text-lg tracking-tight text-white">PostPeer</span>
+              <span className="font-bold text-lg tracking-tight text-white">PostMVP</span>
             </Link>
             <p className="text-gray-400 max-w-xs leading-relaxed font-mono text-xs">
               One API to post, schedule, and automate across every social media platform. Built for developers and AI agents.
@@ -37,7 +37,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-white/10 text-gray-600 font-mono text-xs">
-          <p>© 2024 PostPeer, Inc. All rights reserved.</p>
+          <p>© 2026 PostMVP. All rights reserved.</p>
           <div className="flex items-center gap-4 mt-4 md:mt-0">
             <a href="#" className="hover:text-white transition-colors"><Twitter size={16} /></a>
             <a href="#" className="hover:text-white transition-colors"><Github size={16} /></a>

@@ -89,7 +89,7 @@ export default function ApiKeys() {
       <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#222] pb-6">
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">API Keys</h1>
-          <p className="text-gray-400 text-sm">Manage access keys for the PostPeer API.</p>
+          <p className="text-gray-400 text-sm">Manage access keys for the PostMVP API.</p>
         </div>
         <button 
           onClick={() => setCreateModalOpen(true)}
@@ -109,7 +109,7 @@ export default function ApiKeys() {
             </div>
             <h3 className="text-white text-base font-medium mb-2">No API keys yet</h3>
             <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
-              Create an API key to authenticate your programmatic requests to PostPeer.
+              Create an API key to authenticate your programmatic requests to PostMVP.
             </p>
             <button 
               onClick={() => setCreateModalOpen(true)}
@@ -169,7 +169,7 @@ export default function ApiKeys() {
         <div className="bg-[#0a0a0a] border border-[#333] rounded p-4 overflow-x-auto relative">
           <div className="absolute top-0 right-0 bg-[#222] text-[10px] text-gray-400 px-2 py-1 rounded-bl border-b border-l border-[#333]">BASH</div>
           <pre className="text-xs text-gray-300 font-mono mt-2">
-<span className="text-blue-400">curl</span> -X POST https://api.postpeer.com/v1/posts \<br/>
+<span className="text-blue-400">curl</span> -X POST https://your-postmvp-domain/api/posts \<br/>
   -H <span className="text-green-400">"Authorization: Bearer pp_your_api_key_here"</span> \<br/>
   -H <span className="text-green-400">"Content-Type: application/json"</span> \<br/>
   -d <span className="text-yellow-300">'{'{'}

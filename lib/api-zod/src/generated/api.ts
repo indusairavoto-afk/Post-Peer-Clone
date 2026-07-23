@@ -151,6 +151,25 @@ export const ListConnectedPlatformsResponse = zod.object({
 
 
 /**
+ * @summary Connect a social account to PostMVP
+ */
+export const ConnectPlatformBody = zod.object({
+  "platform": zod.string(),
+  "accountName": zod.string(),
+  "accountHandle": zod.string()
+})
+
+export const ConnectPlatformResponse = zod.object({
+  "id": zod.string(),
+  "platform": zod.string(),
+  "accountName": zod.string(),
+  "accountHandle": zod.string(),
+  "status": zod.enum(['connected', 'disconnected']),
+  "connectedAt": zod.string()
+})
+
+
+/**
  * @summary Disconnect a platform
  */
 export const DisconnectPlatformParams = zod.object({
@@ -158,18 +177,6 @@ export const DisconnectPlatformParams = zod.object({
 })
 
 export const DisconnectPlatformResponse = zod.void()
-
-
-/**
- * @summary Get the PostPeer OAuth URL for a platform
- */
-export const GetPlatformOAuthUrlParams = zod.object({
-  "platform": zod.coerce.string()
-})
-
-export const GetPlatformOAuthUrlResponse = zod.object({
-  "url": zod.string()
-})
 
 
 /**

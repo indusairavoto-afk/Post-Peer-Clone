@@ -1,14 +1,8 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { connectedPlatformsTable } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
-import {
-  getPostPeerClient,
-  getPostPeerOrigin,
-  isPostPeerPlatform,
-} from "../lib/postpeer";
-import { logger } from "../lib/logger";
 
 const ALL_PLATFORMS = [
   { id: "twitter", name: "Twitter / X", icon: "FaTwitter", color: "#1DA1F2", maxLength: 280, supportsMedia: true },
@@ -29,93 +23,43 @@ router.get("/platforms", async (_req, res): Promise<void> => {
 });
 
 router.get("/platforms/connected", requireAuth, async (req, res): Promise<void> => {
-  try {
-    const result = await getPostPeerClient().connect.integrations.list({
-      query: { limit: 100 },
-    });
-    const platforms = (result.data?.integrations ?? []).map((integration) => ({
-      id: integration.id,
-      platform: integration.platform,
-      accountName: integration.displayName || integration.username || integration.platform,
-      accountHandle: integration.username || integration.platform,
-      status: "connected" as const,
-      connectedAt: integration.createdAt,
-    }));
-    res.json({ platforms });
-  } catch (error) {
-    if (error instanceof Error) {
-      logger.error({ err: error }, "PostPeer integrations request failed");
-      res.status(error.message.includes("POSTPEER_API_KEY") ? 503 : 502).json({
-        error: error.message,
-      });
-      return;
-    }
-    res.status(502).json({ error: "PostPeer integrations request failed" });
-  }
+  const clerkId = (req as any).clerkId;
+  const platforms = await db.select().from(connectedPlatformsTable)
+    .where(sql`${connectedPlatformsTable.userId} = ${clerkId} AND ${connectedPlatformsTable.status} = 'connected'`);
+  res.json({ platforms });
 });
 
-router.get("/platforms/:platform/oauth-url", requireAuth, async (req, res): Promise<void> => {
-  const platform = Array.isArray(req.params.platform) ? req.params.platform[0] : req.params.platform;
-  if (!isPostPeerPlatform(platform)) {
-    res.status(400).json({ error: `Unsupported platform: ${platform}` });
+router.post("/platforms/connect", requireAuth, async (req, res): Promise<void> => {
+  const clerkId = (req as any).clerkId;
+  const { platform, accountName, accountHandle } = req.body;
+
+  if (!platform || !accountName || !accountHandle) {
+    res.status(400).json({ error: "platform, accountName, and accountHandle are required" });
     return;
   }
 
-  try {
-    const origin = getPostPeerOrigin(req);
-    const result = await getPostPeerClient().connect.getOAuthUrl({
-      path: { platform },
-      query: {
-        redirectUri: `${origin}/platforms?connected=${encodeURIComponent(platform)}`,
-        cancelRedirectUri: `${origin}/platforms?connect_cancelled=${encodeURIComponent(platform)}`,
-      },
-    });
-    res.json({ url: result.data?.url });
-  } catch (error) {
-    if (error instanceof Error) {
-      logger.error({ err: error }, "PostPeer OAuth URL request failed");
-      res.status(error.message.includes("POSTPEER_API_KEY") ? 503 : 502).json({
-        error: error.message,
-      });
-      return;
-    }
-    res.status(502).json({ error: "PostPeer OAuth URL request failed" });
-  }
+  await db.delete(connectedPlatformsTable)
+    .where(sql`${connectedPlatformsTable.userId} = ${clerkId} AND ${connectedPlatformsTable.platform} = ${platform}`);
+
+  const [connected] = await db.insert(connectedPlatformsTable).values({
+    userId: clerkId,
+    platform,
+    accountName,
+    accountHandle: accountHandle.replace(/^@/, ""),
+    status: "connected",
+  }).returning();
+
+  res.status(201).json(connected);
 });
 
 router.delete("/platforms/:platform/disconnect", requireAuth, async (req, res): Promise<void> => {
   const clerkId = (req as any).clerkId;
   const platform = Array.isArray(req.params.platform) ? req.params.platform[0] : req.params.platform;
 
-  if (!isPostPeerPlatform(platform)) {
-    res.status(400).json({ error: `Unsupported platform: ${platform}` });
-    return;
-  }
+  await db.delete(connectedPlatformsTable)
+    .where(sql`${connectedPlatformsTable.userId} = ${clerkId} AND ${connectedPlatformsTable.platform} = ${platform}`);
 
-  try {
-    const integrations = await getPostPeerClient().connect.integrations.list({
-      query: { platform, limit: 100 },
-    });
-    for (const integration of integrations.data?.integrations ?? []) {
-      await getPostPeerClient().connect.integrations.disconnect({
-        path: { id: integration.id },
-      });
-    }
-
-    await db.delete(connectedPlatformsTable)
-      .where(sql`${connectedPlatformsTable.userId} = ${clerkId} AND ${connectedPlatformsTable.platform} = ${platform}`);
-
-    res.sendStatus(204);
-  } catch (error) {
-    if (error instanceof Error) {
-      logger.error({ err: error }, "PostPeer disconnect request failed");
-      res.status(error.message.includes("POSTPEER_API_KEY") ? 503 : 502).json({
-        error: error.message,
-      });
-      return;
-    }
-    res.status(502).json({ error: "PostPeer disconnect request failed" });
-  }
+  res.sendStatus(204);
 });
 
 export default router;

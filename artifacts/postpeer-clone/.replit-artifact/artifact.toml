@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "PostPeer Clone"
+title = "PostMVP"
 version = "1.0.0"
 id = "artifacts/postpeer-clone"
 router = "path"

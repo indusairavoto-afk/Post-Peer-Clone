@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface OAuthUrl {
-  url: string;
+export interface PlatformConnectInput {
+  platform: string;
+  accountName: string;
+  accountHandle: string;
 }

@@ -1,6 +1,6 @@
 ---
-name: PostPeer Clone Architecture
-description: Full-stack social media API platform — Clerk auth, Express backend, React-Vite frontend, PostgreSQL
+name: PostMVP Architecture
+description: First-party social publishing app — Clerk auth, Express backend, React-Vite frontend, PostgreSQL
 ---
 
 ## Stack
@@ -13,7 +13,7 @@ description: Full-stack social media API platform — Clerk auth, Express backen
 - Auth is cookie-based (Clerk session cookies on web) — do NOT add Bearer token handling to browser API calls
 - requireAuth middleware in artifacts/api-server/src/lib/auth.ts reads clerkId from getAuth(req).userId
 - getOrCreateUser() does JIT provisioning of local user record from Clerk ID
-- Platform connection is simulated (no real OAuth) — stores accountName+accountHandle in DB
+- Platform connections are first-party account records stored in PostMVP's database; provider OAuth adapters can be added later without changing the product boundary
 - API keys are hashed (SHA-256) server-side, only full key shown once on creation
 
 ## DB Tables
@@ -32,4 +32,4 @@ description: Full-stack social media API platform — Clerk auth, Express backen
 - clerkProxyMiddleware mounted in app.ts before cors/body parsers
 - clerkAppearance uses shadcn theme with dark black/white dev-tool palette
 
-**Why:** Platform connection is simulated because real OAuth for 9 social platforms requires per-platform app registration which is out of scope for the MVP.
+**Why:** PostMVP owns the product and should not depend on another social API provider; provider-specific OAuth and delivery can be introduced as independent adapters when each platform's credentials and policies are ready.

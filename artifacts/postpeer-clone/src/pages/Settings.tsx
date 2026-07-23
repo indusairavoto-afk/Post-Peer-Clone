@@ -58,7 +58,7 @@ export default function Settings() {
             
             <div className="border-t border-[#222] pt-6">
               <button 
-                onClick={() => window.open('https://accounts.postpeer.com/user', '_blank')}
+                onClick={() => window.open('https://accounts.clerk.com/user', '_blank')}
                 className="text-sm text-gray-300 hover:text-white flex items-center gap-2 transition-colors border border-[#333] hover:border-gray-500 px-4 py-2 rounded bg-[#0a0a0a]"
               >
                 Manage Profile in Clerk <ExternalLink size={14} />
@@ -128,7 +128,7 @@ export default function Settings() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="text-sm font-medium text-white mb-1">Sign Out</h3>
-                <p className="text-xs text-gray-500">Securely log out of your PostPeer dashboard.</p>
+                <p className="text-xs text-gray-500">Securely log out of your PostMVP dashboard.</p>
               </div>
               <button 
                 onClick={() => signOut()}

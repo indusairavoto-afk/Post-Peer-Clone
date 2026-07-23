@@ -43,16 +43,16 @@ const pageContent: Record<
     title: "Ship your first",
     highlightedTitle: "social post",
     description:
-      "Everything you need to connect PostPeer, create an API key, and publish your first multi-platform post.",
+      "Everything you need to connect accounts, create an API key, and publish your first multi-platform post with PostMVP.",
     icon: BookOpen,
     sections: [
       { title: "1. Create an account", body: "Start with a free workspace and open the API Keys page from your dashboard.", icon: Users },
-      { title: "2. Add your key", body: "Use the generated key in the Authorization header for requests to the PostPeer API.", icon: ShieldCheck },
+      { title: "2. Add your key", body: "Use the generated key in the Authorization header for requests to the PostMVP API.", icon: ShieldCheck },
       { title: "3. Make a request", body: "Create a post with your content and target platforms, then track its delivery status.", icon: FileText },
     ],
   },
   blog: {
-    eyebrow: "From the PostPeer team",
+    eyebrow: "From the PostMVP team",
     title: "Ideas for the",
     highlightedTitle: "automated web",
     description:
@@ -67,7 +67,7 @@ const pageContent: Record<
   changelog: {
     eyebrow: "Product updates",
     title: "What’s new in",
-    highlightedTitle: "PostPeer",
+    highlightedTitle: "PostMVP",
     description:
       "A running snapshot of improvements to the API, dashboard, and developer experience.",
     icon: Newspaper,
@@ -78,15 +78,15 @@ const pageContent: Record<
     ],
   },
   about: {
-    eyebrow: "About PostPeer",
+    eyebrow: "About PostMVP",
     title: "The social layer for",
     highlightedTitle: "modern products",
     description:
-      "PostPeer gives product teams one reliable place to connect, publish, and automate across the social web.",
+      "PostMVP gives product teams one reliable place to connect, publish, and automate across the social web.",
     icon: Users,
     sections: [
       { title: "Our mission", body: "Make social distribution feel like a simple product primitive instead of a collection of brittle integrations.", icon: ArrowRight },
-      { title: "Built for builders", body: "PostPeer is designed around clear APIs, useful delivery signals, and workflows that fit the way developers work.", icon: Code2 },
+      { title: "Built for builders", body: "PostMVP is designed around clear APIs, useful delivery signals, and workflows that fit the way developers work.", icon: Code2 },
       { title: "A focused foundation", body: "We are starting with the core publishing layer and expanding carefully from there.", icon: CheckCircle2 },
     ],
   },
@@ -95,12 +95,12 @@ const pageContent: Record<
     title: "Terms of",
     highlightedTitle: "Service",
     description:
-      "These terms describe the rules for using PostPeer and the responsibilities of PostPeer and its users.",
+      "These terms describe the rules for using PostMVP and the responsibilities of PostMVP and its users.",
     icon: FileText,
     sections: [
-      { title: "Use of the service", body: "Use PostPeer lawfully, keep your account secure, and only publish content you have the right to distribute.", icon: ShieldCheck },
+      { title: "Use of the service", body: "Use PostMVP lawfully, keep your account secure, and only publish content you have the right to distribute.", icon: ShieldCheck },
       { title: "API usage", body: "Respect rate limits and do not use the service to abuse, impersonate, or disrupt third-party platforms.", icon: Code2 },
-      { title: "Questions", body: "If you have questions about these terms, contact the PostPeer team before using the service in production.", icon: ExternalLink },
+      { title: "Questions", body: "If you have questions about these terms, contact the PostMVP team before using the service in production.", icon: ExternalLink },
     ],
   },
   privacy: {
@@ -108,7 +108,7 @@ const pageContent: Record<
     title: "Your data,",
     highlightedTitle: "your control",
     description:
-      "This overview explains the data PostPeer uses to provide authentication, publishing, and account management.",
+      "This overview explains the data PostMVP uses to provide authentication, publishing, and account management.",
     icon: ShieldCheck,
     sections: [
       { title: "Account information", body: "We use account details and authentication data to provide access to your workspace and keep it secure.", icon: Users },
@@ -121,7 +121,7 @@ const pageContent: Record<
     title: "A faster way to",
     highlightedTitle: "ship everywhere",
     description:
-      "Explore the PostPeer workflow from your dashboard: connect destinations, compose once, and track what happens next.",
+      "Explore the PostMVP workflow from your dashboard: connect destinations, compose once, and track what happens next.",
     icon: ArrowRight,
     sections: [
       { title: "Compose once", body: "Write a post and choose the platforms that should receive it.", icon: FileText },

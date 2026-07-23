@@ -32,7 +32,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="w-7 h-7 rounded-sm bg-white text-black flex items-center justify-center">
               <Flame size={16} className="fill-black" />
             </div>
-            <span className="font-bold text-lg tracking-tight">PostPeer</span>
+            <span className="font-bold text-lg tracking-tight">PostMVP</span>
           </Link>
         </div>
 

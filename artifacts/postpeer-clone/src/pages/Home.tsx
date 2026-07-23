@@ -154,7 +154,7 @@ export default function Home() {
               <div className="ml-4 text-xs font-mono text-gray-500 flex-1 text-center">bash</div>
             </div>
             <div className="p-6 font-mono text-sm md:text-base leading-relaxed overflow-x-auto whitespace-pre">
-              <span className="text-gray-500">POST</span> <span className="text-white">https://api.postpeer.dev/v1/posts</span>
+              <span className="text-gray-500">POST</span> <span className="text-white">/api/posts</span>
               <br/>
               <span className="text-gray-400">&#123;</span>
               <br/>
@@ -261,7 +261,7 @@ export default function Home() {
                   <button className="text-gray-500 hover:text-white transition-colors"><Copy size={14} /></button>
                 </div>
                 <div className="p-6 font-mono text-sm overflow-x-auto whitespace-pre text-gray-400">
-                  <span className="text-white">curl</span> -X POST https://api.postpeer.dev/v1/posts \
+                  <span className="text-white">curl</span> -X POST /api/posts \
                   <br/>
                   <span className="text-gray-500">  -H</span> "Authorization: Bearer YOUR_API_KEY" \
                   <br/>

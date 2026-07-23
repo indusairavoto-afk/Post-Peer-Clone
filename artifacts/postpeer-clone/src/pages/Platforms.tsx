@@ -1,10 +1,10 @@
-import { useRef } from "react";
+import { useState, useRef } from "react";
 import { 
   useListPlatforms, 
   useListConnectedPlatforms, 
+  useConnectPlatform,
   useDisconnectPlatform,
   getListConnectedPlatformsQueryKey,
-  getPlatformOAuthUrl,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -12,6 +12,7 @@ import { Link2, Unlink, Globe, Loader2 } from "lucide-react";
 import { FaTwitter, FaInstagram, FaFacebook, FaLinkedin, FaTiktok, FaYoutube, FaPinterest } from "react-icons/fa";
 import { SiBluesky, SiThreads } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const PlatformIcons: Record<string, any> = {
   twitter: FaTwitter,
@@ -26,7 +27,13 @@ const PlatformIcons: Record<string, any> = {
 };
 
 export default function Platforms() {
+  const [connectModalOpen, setConnectModalOpen] = useState<string | null>(null);
+  const [accountHandle, setAccountHandle] = useState("");
   const queryClient = useQueryClient();
+  const connectMutation = useConnectPlatform();
+  const connectFnRef = useRef(connectMutation.mutate);
+  connectFnRef.current = connectMutation.mutate;
+
   const { toast } = useToast();
 
   const { data: platformsData, isLoading: platformsLoading } = useListPlatforms();
@@ -38,17 +45,29 @@ export default function Platforms() {
   const disconnectFnRef = useRef(disconnectMutation.mutate);
   disconnectFnRef.current = disconnectMutation.mutate;
 
-  const handleConnect = async (platform: string) => {
-    try {
-      const result = await getPlatformOAuthUrl(platform);
-      window.location.assign(result.url);
-    } catch (err: any) {
-      toast({
-        title: "Failed to start connection",
-        description: err.message || "Unable to start OAuth",
-        variant: "destructive",
-      });
-    }
+  const handleConnect = () => {
+    if (!connectModalOpen || !accountHandle.trim()) return;
+
+    connectFnRef.current(
+      {
+        data: {
+          platform: connectModalOpen,
+          accountHandle,
+          accountName: accountHandle.replace(/^@/, ""),
+        },
+      },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListConnectedPlatformsQueryKey() });
+          toast({ title: "Account connected" });
+          setConnectModalOpen(null);
+          setAccountHandle("");
+        },
+        onError: (err: any) => {
+          toast({ title: "Failed to connect", description: err.message, variant: "destructive" });
+        },
+      },
+    );
   };
 
   const handleDisconnect = (platform: string) => {
@@ -139,7 +158,7 @@ export default function Platforms() {
               ) : (
                 <div className="mt-auto pt-4 border-t border-[#222]">
                   <button 
-                    onClick={() => handleConnect(platform.id)}
+                    onClick={() => setConnectModalOpen(platform.id)}
                     className="w-full bg-[#1a1a1a] hover:bg-[#222] text-white text-sm py-2 rounded border border-[#333] transition-colors flex items-center justify-center gap-2"
                   >
                     <Link2 size={14} /> Connect {platform.name}
@@ -150,6 +169,43 @@ export default function Platforms() {
           );
         })}
       </div>
+
+      <Dialog open={!!connectModalOpen} onOpenChange={(open) => !open && setConnectModalOpen(null)}>
+        <DialogContent className="bg-[#111] border-[#333] text-white font-mono">
+          <DialogHeader>
+            <DialogTitle className="capitalize">Connect {connectModalOpen}</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Add the account handle you want to manage in PostMVP.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <label className="block text-xs uppercase tracking-wider text-gray-500 mb-2">Account Handle</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">@</span>
+              <input
+                type="text"
+                value={accountHandle}
+                onChange={(event) => setAccountHandle(event.target.value)}
+                placeholder="username"
+                className="w-full bg-[#0a0a0a] border border-[#333] rounded px-3 py-2 pl-8 text-sm text-white focus:outline-none focus:border-white transition-colors"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <button onClick={() => setConnectModalOpen(null)} className="px-4 py-2 text-sm text-white hover:bg-[#222] rounded border border-[#333] transition-colors">
+              Cancel
+            </button>
+            <button
+              onClick={handleConnect}
+              disabled={connectMutation.isPending || !accountHandle.trim()}
+              className="px-4 py-2 text-sm bg-white text-black rounded hover:bg-gray-200 transition-colors disabled:opacity-50 font-bold"
+            >
+              {connectMutation.isPending ? "Saving..." : "Connect Account"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </motion.div>
   );

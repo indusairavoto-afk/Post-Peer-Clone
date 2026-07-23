@@ -1,1 +1,1 @@
-- [PostPeer Clone Architecture](postpeer-clone.md) — full-stack social media API platform; Clerk auth, Postgres, Express backend, React-Vite frontend
+- [PostMVP Architecture](postpeer-clone.md) — first-party social publishing app; Clerk auth, Postgres, Express backend, React-Vite frontend
