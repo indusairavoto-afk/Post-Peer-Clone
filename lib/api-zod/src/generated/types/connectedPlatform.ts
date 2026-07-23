@@ -8,7 +8,7 @@
 import type { ConnectedPlatformStatus } from './connectedPlatformStatus';
 
 export interface ConnectedPlatform {
-  id: number;
+  id: string;
   platform: string;
   accountName: string;
   accountHandle: string;

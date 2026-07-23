@@ -14,6 +14,7 @@ PostPeer Clone is a social media publishing dashboard for composing, scheduling,
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required services: Replit-managed Clerk authentication and the provisioned PostgreSQL database (`DATABASE_URL`)
 - Clerk keys are provisioned as `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and `VITE_CLERK_PUBLISHABLE_KEY`
+- Required external integration secret: `POSTPEER_API_KEY` for real PostPeer OAuth, integrations, and publishing
 
 ## Stack
 
@@ -39,7 +40,8 @@ PostPeer Clone is a social media publishing dashboard for composing, scheduling,
 - The existing pnpm workspace and artifact boundaries are preserved; no migration or restructuring was performed.
 - The web app is served at `/`, the API at `/api`, and the mockup server at `/__mockup`.
 - Browser authentication uses Clerk session cookies through the API proxy.
-- Platform connections are simulated for the MVP rather than requiring nine separate social OAuth registrations.
+- Platform connections use PostPeer-hosted OAuth and are fetched from the connected integrations API.
+- The official `@postpeer/node` SDK is used server-side for real OAuth, integration discovery, and post delivery.
 
 ## Product
 

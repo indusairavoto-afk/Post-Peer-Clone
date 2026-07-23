@@ -23,12 +23,11 @@ import type {
   ApiKeyCreated,
   ApiKeyInput,
   ApiKeyList,
-  ConnectedPlatform,
   ConnectedPlatformList,
   DashboardStats,
   HealthStatus,
   ListPostsParams,
-  PlatformConnectInput,
+  OAuthUrl,
   PlatformList,
   Post,
   PostInput,
@@ -674,77 +673,6 @@ export function useListConnectedPlatforms<TData = Awaited<ReturnType<typeof list
 
 
 
-export const getConnectPlatformUrl = () => {
-
-
-
-
-  return `/api/platforms/connect`
-}
-
-/**
- * @summary Connect a social media platform
- */
-export const connectPlatform = async (platformConnectInput: PlatformConnectInput, options?: RequestInit): Promise<ConnectedPlatform> => {
-
-  return customFetch<ConnectedPlatform>(getConnectPlatformUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(platformConnectInput)
-  }
-);}
-
-
-
-
-
-export const getConnectPlatformMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connectPlatform>>, TError,{data: BodyType<PlatformConnectInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof connectPlatform>>, TError,{data: BodyType<PlatformConnectInput>}, TContext> => {
-
-const mutationKey = ['connectPlatform'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof connectPlatform>>, {data: BodyType<PlatformConnectInput>}> = (props) => {
-          const {data} = props ?? {};
-
-          return  connectPlatform(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type ConnectPlatformMutationResult = NonNullable<Awaited<ReturnType<typeof connectPlatform>>>
-    export type ConnectPlatformMutationBody = BodyType<PlatformConnectInput>
-    export type ConnectPlatformMutationError = ErrorType<unknown>
-
-    /**
- * @summary Connect a social media platform
- */
-export const useConnectPlatform = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connectPlatform>>, TError,{data: BodyType<PlatformConnectInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof connectPlatform>>,
-        TError,
-        {data: BodyType<PlatformConnectInput>},
-        TContext
-      > => {
-      return useMutation(getConnectPlatformMutationOptions(options));
-    }
-
 export const getDisconnectPlatformUrl = (platform: string,) => {
 
 
@@ -815,6 +743,83 @@ export const useDisconnectPlatform = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getDisconnectPlatformMutationOptions(options));
     }
+
+export const getGetPlatformOAuthUrlUrl = (platform: string,) => {
+
+
+
+
+  return `/api/platforms/${platform}/oauth-url`
+}
+
+/**
+ * @summary Get the PostPeer OAuth URL for a platform
+ */
+export const getPlatformOAuthUrl = async (platform: string, options?: RequestInit): Promise<OAuthUrl> => {
+
+  return customFetch<OAuthUrl>(getGetPlatformOAuthUrlUrl(platform),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPlatformOAuthUrlQueryKey = (platform: string,) => {
+    return [
+    `/api/platforms/${platform}/oauth-url`
+    ] as const;
+    }
+
+
+export const getGetPlatformOAuthUrlQueryOptions = <TData = Awaited<ReturnType<typeof getPlatformOAuthUrl>>, TError = ErrorType<void>>(platform: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPlatformOAuthUrl>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPlatformOAuthUrlQueryKey(platform);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPlatformOAuthUrl>>> = ({ signal }) => getPlatformOAuthUrl(platform, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: platform !== null && platform !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPlatformOAuthUrl>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPlatformOAuthUrlQueryResult = NonNullable<Awaited<ReturnType<typeof getPlatformOAuthUrl>>>
+export type GetPlatformOAuthUrlQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get the PostPeer OAuth URL for a platform
+ */
+
+export function useGetPlatformOAuthUrl<TData = Awaited<ReturnType<typeof getPlatformOAuthUrl>>, TError = ErrorType<void>>(
+ platform: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPlatformOAuthUrl>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPlatformOAuthUrlQueryOptions(platform,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListApiKeysUrl = () => {
 

@@ -176,6 +176,9 @@ importers:
       '@clerk/shared':
         specifier: ^4.25.6
         version: 4.25.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@postpeer/node':
+        specifier: 0.8.1
+        version: 0.8.1
       '@workspace/api-zod':
         specifier: workspace:*
         version: link:../../lib/api-zod
@@ -913,6 +916,10 @@ packages:
 
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
+
+  '@postpeer/node@0.8.1':
+    resolution: {integrity: sha512-Xl1dz+t/GO2Pigep+pTkvf7vma+y3rZ2KIgv1wFDNY/ctFibNyoGMJtNBEL/B4A6tZ93nDyvokpu5WCC7EJPLg==}
+    engines: {node: '>=20'}
 
   '@radix-ui/number@1.1.2':
     resolution: {integrity: sha512-ceTwaxc4I5IOi97DgCotl3pqiyRGvffcc0oOsE2dQYaJOFIDsDt4VWG6xEbg1QePv9QWausCEIppud/tJ1wNig==}
@@ -3558,6 +3565,8 @@ snapshots:
       - typescript
 
   '@pinojs/redact@0.4.0': {}
+
+  '@postpeer/node@0.8.1': {}
 
   '@radix-ui/number@1.1.2': {}
 

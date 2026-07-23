@@ -82,7 +82,7 @@ export const ConnectedPlatformStatus = {
 } as const;
 
 export interface ConnectedPlatform {
-  id: number;
+  id: string;
   platform: string;
   accountName: string;
   accountHandle: string;
@@ -90,14 +90,12 @@ export interface ConnectedPlatform {
   connectedAt: string;
 }
 
-export interface ConnectedPlatformList {
-  platforms: ConnectedPlatform[];
+export interface OAuthUrl {
+  url: string;
 }
 
-export interface PlatformConnectInput {
-  platform: string;
-  accountName: string;
-  accountHandle: string;
+export interface ConnectedPlatformList {
+  platforms: ConnectedPlatform[];
 }
 
 export interface ApiKey {
