@@ -16,6 +16,7 @@ import PlatformsPage from "@/pages/Platforms";
 import ApiKeysPage from "@/pages/ApiKeys";
 import SettingsPage from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
+import PublicPage from "@/pages/PublicPage";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -191,6 +192,15 @@ function ClerkProviderWithRoutes() {
                 <Footer />
               </div>
             </Route>
+            <Route path="/apis"><PublicPage page="apis" /></Route>
+            <Route path="/docs"><PublicPage page="docs" /></Route>
+            <Route path="/blog"><PublicPage page="blog" /></Route>
+            <Route path="/changelog"><PublicPage page="changelog" /></Route>
+            <Route path="/about"><PublicPage page="about" /></Route>
+            <Route path="/terms"><PublicPage page="terms" /></Route>
+            <Route path="/privacy"><PublicPage page="privacy" /></Route>
+            <Route path="/demo"><PublicPage page="demo" /></Route>
+            <Route path="/register"><Redirect to="/sign-up" /></Route>
             <Route path="/sign-in/*?" component={SignInPage} />
             <Route path="/sign-up/*?" component={SignUpPage} />
             <Route path="/dashboard"><ProtectedRoute component={DashboardPage} /></Route>
