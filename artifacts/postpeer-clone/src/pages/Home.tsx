@@ -11,15 +11,24 @@ import {
 } from "lucide-react";
 
 const floatingIcons = [
-  { Icon: FaInstagram, delay: 0, top: "20%", left: "10%" },
-  { Icon: FaTwitter, delay: 0.5, top: "25%", right: "12%" },
-  { Icon: FaTiktok, delay: 1, top: "60%", left: "8%" },
-  { Icon: FaLinkedin, delay: 1.5, top: "65%", right: "8%" },
-  { Icon: FaYoutube, delay: 2, top: "85%", left: "20%" },
-  { Icon: SiThreads, delay: 2.5, top: "80%", right: "25%" },
+  { Icon: FaInstagram, delay: 0, top: "20%", left: "10%", color: "#E1306C" },
+  { Icon: FaTwitter, delay: 0.5, top: "25%", right: "12%", color: "#1DA1F2" },
+  { Icon: FaTiktok, delay: 1, top: "60%", left: "8%", color: "#69C9D0" },
+  { Icon: FaLinkedin, delay: 1.5, top: "65%", right: "8%", color: "#0A66C2" },
+  { Icon: FaYoutube, delay: 2, top: "85%", left: "20%", color: "#FF0000" },
+  { Icon: SiThreads, delay: 2.5, top: "80%", right: "25%", color: "#ffffff" },
 ];
 
-const platformIcons = [FaInstagram, FaFacebook, FaTiktok, FaYoutube, FaTwitter, FaPinterest, FaLinkedin, SiThreads];
+const platformIcons = [
+  { Icon: FaInstagram, color: "#E1306C" },
+  { Icon: FaFacebook, color: "#1877F2" },
+  { Icon: FaTiktok, color: "#69C9D0" },
+  { Icon: FaYoutube, color: "#FF0000" },
+  { Icon: FaTwitter, color: "#1DA1F2" },
+  { Icon: FaPinterest, color: "#E60023" },
+  { Icon: FaLinkedin, color: "#0A66C2" },
+  { Icon: SiThreads, color: "#ffffff" },
+];
 
 const features = [
   {
@@ -66,8 +75,8 @@ export default function Home() {
           {floatingIcons.map((item, i) => (
             <motion.div
               key={i}
-              className="absolute w-14 h-14 md:w-20 md:h-20 bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-white/40 shadow-2xl shadow-white/5"
-              style={{ top: item.top, left: item.left, right: item.right }}
+              className="absolute w-14 h-14 md:w-20 md:h-20 bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-2xl shadow-white/5"
+              style={{ top: item.top, left: item.left, right: item.right, color: item.color }}
               animate={{ 
                 y: [0, -30, 0], 
                 rotate: [0, 10, -10, 0],
@@ -108,11 +117,11 @@ export default function Home() {
             Add social media posting, scheduling, and automation to your product in minutes. One API, all platforms, unlimited accounts.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 mb-8 text-gray-500">
-            {platformIcons.map((Icon, idx) => (
-              <Icon key={idx} size={20} className="hover:text-white transition-colors" />
+          <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
+            {platformIcons.map(({ Icon, color }, idx) => (
+              <Icon key={idx} size={20} style={{ color }} className="opacity-80 hover:opacity-100 transition-opacity" />
             ))}
-            <span className="font-mono text-sm ml-2">+ more</span>
+            <span className="font-mono text-sm ml-2 text-gray-500">+ more</span>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
