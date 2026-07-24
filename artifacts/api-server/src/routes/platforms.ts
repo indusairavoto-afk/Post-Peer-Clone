@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { connectedPlatformsTable } from "@workspace/db";
-import { sql } from "drizzle-orm";
-import { requireAuth } from "../lib/auth";
+import { usersTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
+import { requireAuth, getOrCreateUser } from "../lib/auth";
+import { listAccounts } from "../lib/postbridge";
 
 const ALL_PLATFORMS = [
   { id: "twitter", name: "Twitter / X", icon: "FaTwitter", color: "#1DA1F2", maxLength: 280, supportsMedia: true },
@@ -22,30 +23,35 @@ router.get("/platforms", async (_req, res): Promise<void> => {
   res.json({ platforms: ALL_PLATFORMS });
 });
 
+/**
+ * List connected platforms.
+ * If the user has a Post Bridge API key, returns live accounts from Post Bridge.
+ * Otherwise returns an empty list — no fake connections allowed.
+ */
 router.get("/platforms/connected", requireAuth, async (req, res): Promise<void> => {
   const clerkId = (req as any).clerkId;
-  const platforms = await db.select().from(connectedPlatformsTable)
-    .where(sql`${connectedPlatformsTable.userId} = ${clerkId} AND ${connectedPlatformsTable.status} = 'connected'`);
-  res.json({ platforms });
-});
 
-router.get("/platforms/:platform/oauth/start", requireAuth, async (req, res): Promise<void> => {
-  const platform = Array.isArray(req.params.platform) ? req.params.platform[0] : req.params.platform;
+  const user = await getOrCreateUser(clerkId);
+  if (!user.postBridgeApiKey) {
+    res.json({ platforms: [], postBridgeConfigured: false });
+    return;
+  }
 
-  res.status(503).json({
-    error: "REAL_OAUTH_NOT_CONFIGURED",
-    message: `Real ${platform} authorization is not configured for this workspace yet.`,
-  });
-});
-
-router.delete("/platforms/:platform/disconnect", requireAuth, async (req, res): Promise<void> => {
-  const clerkId = (req as any).clerkId;
-  const platform = Array.isArray(req.params.platform) ? req.params.platform[0] : req.params.platform;
-
-  await db.delete(connectedPlatformsTable)
-    .where(sql`${connectedPlatformsTable.userId} = ${clerkId} AND ${connectedPlatformsTable.platform} = ${platform}`);
-
-  res.sendStatus(204);
+  try {
+    const accounts = await listAccounts(user.postBridgeApiKey);
+    const platforms = accounts.map((acc) => ({
+      id: String(acc.id),
+      platform: acc.platform,
+      accountName: acc.name ?? acc.username,
+      accountHandle: acc.username,
+      status: "connected",
+      connectedAt: new Date().toISOString(),
+      postBridgeAccountId: acc.id,
+    }));
+    res.json({ platforms, postBridgeConfigured: true });
+  } catch (err: any) {
+    res.status(502).json({ error: `Post Bridge error: ${err.message}` });
+  }
 });
 
 export default router;

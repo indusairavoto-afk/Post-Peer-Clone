@@ -13,5 +13,6 @@ export interface UserProfile {
   email: string;
   name: string;
   plan: UserProfilePlan;
+  hasPostBridgeKey?: boolean;
   createdAt: string;
 }

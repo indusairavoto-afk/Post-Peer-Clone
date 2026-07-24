@@ -14,4 +14,5 @@ export interface ConnectedPlatform {
   accountHandle: string;
   status: ConnectedPlatformStatus;
   connectedAt: string;
+  postBridgeAccountId?: number;
 }

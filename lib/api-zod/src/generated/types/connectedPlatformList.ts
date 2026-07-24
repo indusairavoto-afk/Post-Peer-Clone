@@ -9,4 +9,5 @@ import type { ConnectedPlatform } from './connectedPlatform';
 
 export interface ConnectedPlatformList {
   platforms: ConnectedPlatform[];
+  postBridgeConfigured?: boolean;
 }

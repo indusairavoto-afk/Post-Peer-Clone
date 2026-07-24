@@ -251,6 +251,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserProfile"
 
+  /user/settings:
+    put:
+      operationId: updateUserSettings
+      tags: [user]
+      summary: Update user settings (e.g. Post Bridge API key)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserSettingsInput"
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          description: Invalid settings (e.g. bad API key)
+
 components:
   schemas:
     HealthStatus:
@@ -339,6 +360,11 @@ components:
           type: array
           items:
             type: string
+        accountIds:
+          type: array
+          items:
+            type: integer
+          description: Post Bridge account IDs to publish to. When provided with a configured Post Bridge key, publishes for real.
       required: [content, platforms]
 
     Platform:
@@ -383,6 +409,8 @@ components:
           enum: [connected, disconnected, unverified]
         connectedAt:
           type: string
+        postBridgeAccountId:
+          type: integer
       required: [id, platform, accountName, accountHandle, status, connectedAt]
 
     ConnectedPlatformList:
@@ -392,6 +420,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ConnectedPlatform"
+        postBridgeConfigured:
+          type: boolean
       required: [platforms]
 
     ApiKey:
@@ -459,6 +489,15 @@ components:
         plan:
           type: string
           enum: [free, starter, standard, pro]
+        hasPostBridgeKey:
+          type: boolean
         createdAt:
           type: string
       required: [id, clerkId, email, name, plan, createdAt]
+
+    UserSettingsInput:
+      type: object
+      properties:
+        postBridgeApiKey:
+          type: ["string", "null"]
+      required: []

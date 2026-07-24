@@ -1,15 +1,16 @@
 import { useState, useRef } from "react";
-import { useListConnectedPlatforms, useCreatePost, getListPostsQueryKey } from "@workspace/api-client-react";
+import { useListConnectedPlatforms, useCreatePost, getListPostsQueryKey, getListConnectedPlatformsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Check, Calendar, Send, Globe, Image as ImageIcon } from "lucide-react";
+import { Check, Calendar, Send, Globe, Image as ImageIcon, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FaTwitter, FaInstagram, FaFacebook, FaLinkedin, FaTiktok, FaYoutube, FaPinterest } from "react-icons/fa";
 import { SiBluesky, SiThreads } from "react-icons/si";
 
 const PlatformIcons: Record<string, any> = {
   twitter: FaTwitter,
+  x: FaTwitter,
   instagram: FaInstagram,
   facebook: FaFacebook,
   linkedin: FaLinkedin,
@@ -22,45 +23,49 @@ const PlatformIcons: Record<string, any> = {
 
 const PlatformLimits: Record<string, number> = {
   twitter: 280,
+  x: 280,
   instagram: 2200,
   linkedin: 3000,
   tiktok: 2200,
   bluesky: 300,
   threads: 500,
   facebook: 63206,
+  youtube: 5000,
+  pinterest: 500,
 };
 
 export default function Compose() {
   const [content, setContent] = useState("");
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  // selected is a set of conn.id strings (Post Bridge account IDs)
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduledAt, setScheduledAt] = useState("");
-  
+
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const { data: connectedPlatforms } = useListConnectedPlatforms({
-    query: { queryKey: ["/api/platforms/connected"] }
+    query: { queryKey: getListConnectedPlatformsQueryKey() },
   });
-  
+
   const createPost = useCreatePost();
   const mutateFnRef = useRef(createPost.mutate);
   mutateFnRef.current = createPost.mutate;
 
   const connectedList = connectedPlatforms?.platforms || [];
-  
-  const handleTogglePlatform = (platform: string) => {
-    if (selectedPlatforms.includes(platform)) {
-      setSelectedPlatforms(selectedPlatforms.filter(p => p !== platform));
-    } else {
-      setSelectedPlatforms([...selectedPlatforms, platform]);
-    }
+  const postBridgeConfigured = (connectedPlatforms as any)?.postBridgeConfigured ?? false;
+
+  const handleToggle = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
   };
 
   const getLowestLimit = () => {
-    if (selectedPlatforms.length === 0) return 2200; // Default reasonable limit
-    return Math.min(...selectedPlatforms.map(p => PlatformLimits[p] || 2200));
+    if (selectedIds.length === 0) return 2200;
+    const selected = connectedList.filter((c) => selectedIds.includes(c.id));
+    return Math.min(...selected.map((c) => PlatformLimits[c.platform] ?? 2200));
   };
 
   const limit = getLowestLimit();
@@ -72,8 +77,8 @@ export default function Compose() {
       toast({ title: "Content is required", variant: "destructive" });
       return;
     }
-    if (selectedPlatforms.length === 0) {
-      toast({ title: "Select at least one platform", variant: "destructive" });
+    if (selectedIds.length === 0) {
+      toast({ title: "Select at least one account", variant: "destructive" });
       return;
     }
     if (isOverLimit) {
@@ -85,11 +90,19 @@ export default function Compose() {
       return;
     }
 
-    const payload: any = {
-      content,
-      platforms: selectedPlatforms,
-    };
-    
+    const selectedAccounts = connectedList.filter((c) => selectedIds.includes(c.id));
+    const platforms = selectedAccounts.map((c) => c.platform);
+    const accountIds = selectedAccounts
+      .map((c) => (c as any).postBridgeAccountId as number | undefined)
+      .filter((id): id is number => typeof id === "number");
+
+    const payload: any = { content, platforms };
+
+    // Pass Post Bridge account IDs so the backend can actually publish
+    if (accountIds.length > 0) {
+      payload.accountIds = accountIds;
+    }
+
     if (isScheduling) {
       const d = new Date(scheduledAt);
       if (d <= new Date()) {
@@ -104,26 +117,26 @@ export default function Compose() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListPostsQueryKey() });
-          toast({ 
-            title: isScheduling ? "Post scheduled!" : "Post sent!", 
-            description: `Delivering to ${selectedPlatforms.length} platforms.`
+          toast({
+            title: isScheduling ? "Post scheduled!" : "Post published!",
+            description: `Delivering to ${selectedAccounts.length} account${selectedAccounts.length > 1 ? "s" : ""} via Post Bridge.`,
           });
           setLocation("/posts");
         },
         onError: (err: any) => {
-          toast({ 
-            title: "Failed to create post", 
-            description: err.message || "An error occurred", 
-            variant: "destructive" 
+          toast({
+            title: "Failed to create post",
+            description: err.message || "An error occurred",
+            variant: "destructive",
           });
-        }
+        },
       }
     );
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 16 }} 
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       className="h-full flex flex-col"
     >
@@ -133,7 +146,7 @@ export default function Compose() {
       </header>
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-0">
-        
+
         {/* Left Column - Editor */}
         <div className="lg:col-span-7 flex flex-col space-y-4">
           <div className="bg-[#111] border border-[#222] rounded-md flex-1 flex flex-col overflow-hidden focus-within:border-[#555] transition-colors shadow-sm">
@@ -143,13 +156,13 @@ export default function Compose() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
-            
+
             <div className="p-4 bg-[#0a0a0a] border-t border-[#222] flex items-center justify-between">
               <button className="p-2 text-gray-400 hover:text-white hover:bg-[#222] rounded-md transition-colors">
                 <ImageIcon size={18} />
               </button>
-              
-              <div className={`text-xs font-mono px-2 py-1 rounded ${isOverLimit ? 'text-red-400 bg-red-950/30' : 'text-gray-500'}`}>
+
+              <div className={`text-xs font-mono px-2 py-1 rounded ${isOverLimit ? "text-red-400 bg-red-950/30" : "text-gray-500"}`}>
                 {content.length} / {limit}
               </div>
             </div>
@@ -157,18 +170,18 @@ export default function Compose() {
 
           <div className="bg-[#111] border border-[#222] rounded-md p-4">
             <div className="flex items-center gap-4 mb-4 border-b border-[#222] pb-4">
-              <button 
+              <button
                 onClick={() => setIsScheduling(false)}
                 className={`flex-1 py-2 px-3 rounded text-sm font-medium border flex items-center justify-center gap-2 transition-colors ${
-                  !isScheduling ? 'bg-white text-black border-white' : 'bg-[#1a1a1a] text-gray-400 border-[#333] hover:text-white'
+                  !isScheduling ? "bg-white text-black border-white" : "bg-[#1a1a1a] text-gray-400 border-[#333] hover:text-white"
                 }`}
               >
                 <Send size={14} /> Post Now
               </button>
-              <button 
+              <button
                 onClick={() => setIsScheduling(true)}
                 className={`flex-1 py-2 px-3 rounded text-sm font-medium border flex items-center justify-center gap-2 transition-colors ${
-                  isScheduling ? 'bg-white text-black border-white' : 'bg-[#1a1a1a] text-gray-400 border-[#333] hover:text-white'
+                  isScheduling ? "bg-white text-black border-white" : "bg-[#1a1a1a] text-gray-400 border-[#333] hover:text-white"
                 }`}
               >
                 <Calendar size={14} /> Schedule
@@ -178,8 +191,8 @@ export default function Compose() {
             {isScheduling && (
               <div className="mb-4 animate-in fade-in slide-in-from-top-2">
                 <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wider">Delivery Time</label>
-                <input 
-                  type="datetime-local" 
+                <input
+                  type="datetime-local"
                   value={scheduledAt}
                   onChange={(e) => setScheduledAt(e.target.value)}
                   className="w-full bg-[#0a0a0a] border border-[#333] rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-white transition-colors"
@@ -187,51 +200,71 @@ export default function Compose() {
               </div>
             )}
 
-            <button 
+            <button
               onClick={handleSubmit}
               disabled={createPost.isPending}
               className="w-full py-3 bg-white text-black font-bold text-sm rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
             >
-              {createPost.isPending ? "Processing..." : isScheduling ? "Schedule Post" : "Publish Now"}
+              {createPost.isPending ? "Publishing..." : isScheduling ? "Schedule Post" : "Publish Now"}
             </button>
           </div>
         </div>
 
-        {/* Right Column - Platforms & Preview */}
+        {/* Right Column - Account Selection & Preview */}
         <div className="lg:col-span-5 flex flex-col space-y-6">
-          
+
           <div>
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-sm font-medium text-white">Select Platforms</h2>
-              <span className="text-xs text-gray-500">{selectedPlatforms.length} selected</span>
+              <h2 className="text-sm font-medium text-white">Select Accounts</h2>
+              <span className="text-xs text-gray-500">{selectedIds.length} selected</span>
             </div>
-            
+
             {connectedList.length === 0 ? (
               <div className="bg-[#111] border border-[#222] border-dashed rounded-md p-6 text-center">
                 <Globe size={24} className="mx-auto text-gray-500 mb-2" />
-                <p className="text-sm text-gray-300 mb-1">No platforms connected</p>
-                <p className="text-xs text-gray-500 mb-4">Connect accounts to start posting.</p>
-                <button onClick={() => setLocation('/platforms')} className="text-xs text-black bg-white px-3 py-1.5 rounded hover:bg-gray-200">
-                  Connect Platforms
-                </button>
+                {postBridgeConfigured ? (
+                  <>
+                    <p className="text-sm text-gray-300 mb-1">No accounts connected</p>
+                    <p className="text-xs text-gray-500 mb-4">Add social accounts on Post Bridge first.</p>
+                    <a
+                      href="https://app.post-bridge.com/accounts"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-black bg-white px-3 py-1.5 rounded hover:bg-gray-200"
+                    >
+                      Open Post Bridge <ExternalLink size={12} />
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-300 mb-1">Post Bridge not configured</p>
+                    <p className="text-xs text-gray-500 mb-4">Add your Post Bridge API key to connect real accounts.</p>
+                    <a
+                      href="/settings"
+                      className="text-xs text-black bg-white px-3 py-1.5 rounded hover:bg-gray-200"
+                    >
+                      Go to Settings
+                    </a>
+                  </>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-2">
                 {connectedList.map((conn) => {
                   const Icon = PlatformIcons[conn.platform] || Globe;
-                  const isSelected = selectedPlatforms.includes(conn.platform);
-                  
+                  const isSelected = selectedIds.includes(conn.id);
+
                   return (
                     <button
                       key={conn.id}
-                      onClick={() => handleTogglePlatform(conn.platform)}
+                      onClick={() => handleToggle(conn.id)}
                       className={`text-left p-3 rounded-md border flex items-center gap-3 transition-all ${
-                        isSelected 
-                          ? "bg-[#1a1a1a] border-white text-white shadow-[0_0_0_1px_rgba(255,255,255,1)]" 
+                        isSelected
+                          ? "bg-[#1a1a1a] border-white text-white shadow-[0_0_0_1px_rgba(255,255,255,1)]"
                           : "bg-[#0a0a0a] border-[#222] text-gray-400 hover:border-[#444] hover:bg-[#111]"
                       }`}
                     >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isSelected ? 'bg-white text-black' : 'bg-[#222] text-gray-300'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isSelected ? "bg-white text-black" : "bg-[#222] text-gray-300"}`}>
                         <Icon size={14} />
                       </div>
                       <div className="overflow-hidden flex-1">
@@ -249,8 +282,8 @@ export default function Compose() {
           <div className="flex-1 min-h-[200px]">
             <h2 className="text-sm font-medium text-white mb-3">Live Preview</h2>
             <div className="bg-[#0a0a0a] border border-[#222] rounded-lg p-5 h-full flex items-center justify-center relative overflow-hidden">
-              <div className="absolute inset-0 scanlines pointer-events-none opacity-50"></div>
-              
+              <div className="absolute inset-0 scanlines pointer-events-none opacity-50" />
+
               {!content ? (
                 <p className="text-xs text-gray-600 font-mono text-center relative z-10">
                   // Start typing to see preview
@@ -262,18 +295,15 @@ export default function Compose() {
                       <span className="text-gray-400 text-xs">A</span>
                     </div>
                     <div>
-                      <div className="w-24 h-3 bg-[#222] rounded mb-1.5"></div>
-                      <div className="w-16 h-2 bg-[#1a1a1a] rounded"></div>
+                      <div className="w-24 h-3 bg-[#222] rounded mb-1.5" />
+                      <div className="w-16 h-2 bg-[#1a1a1a] rounded" />
                     </div>
                   </div>
-                  <p className="text-sm text-gray-200 whitespace-pre-wrap break-words">
-                    {content}
-                  </p>
+                  <p className="text-sm text-gray-200 whitespace-pre-wrap break-words">{content}</p>
                 </div>
               )}
             </div>
           </div>
-          
         </div>
       </div>
     </motion.div>

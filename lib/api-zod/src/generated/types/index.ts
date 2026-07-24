@@ -26,3 +26,4 @@ export * from './postStatus';
 export * from './startPlatformOAuth503';
 export * from './userProfile';
 export * from './userProfilePlan';
+export * from './userSettingsInput';

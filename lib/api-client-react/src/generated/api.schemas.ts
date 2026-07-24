@@ -58,6 +58,8 @@ export interface PostInput {
   /** @nullable */
   scheduledAt?: string | null;
   mediaUrls?: string[];
+  /** Post Bridge account IDs to publish to. When provided with a configured Post Bridge key, publishes for real. */
+  accountIds?: number[];
 }
 
 export interface Platform {
@@ -89,10 +91,12 @@ export interface ConnectedPlatform {
   accountHandle: string;
   status: ConnectedPlatformStatus;
   connectedAt: string;
+  postBridgeAccountId?: number;
 }
 
 export interface ConnectedPlatformList {
   platforms: ConnectedPlatform[];
+  postBridgeConfigured?: boolean;
 }
 
 export interface ApiKey {
@@ -139,7 +143,13 @@ export interface UserProfile {
   email: string;
   name: string;
   plan: UserProfilePlan;
+  hasPostBridgeKey?: boolean;
   createdAt: string;
+}
+
+export interface UserSettingsInput {
+  /** @nullable */
+  postBridgeApiKey?: string | null;
 }
 
 export type ListPostsParams = {

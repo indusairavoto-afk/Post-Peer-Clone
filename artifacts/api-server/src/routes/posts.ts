@@ -2,15 +2,14 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { postsTable } from "@workspace/db";
 import { eq, desc, sql, count } from "drizzle-orm";
-import { requireAuth } from "../lib/auth";
+import { requireAuth, getOrCreateUser } from "../lib/auth";
+import { createPost as pbCreatePost, listAccounts } from "../lib/postbridge";
 
 const router: IRouter = Router();
 
 router.get("/posts", requireAuth, async (req, res): Promise<void> => {
   const clerkId = (req as any).clerkId;
   const { status, platform, limit = "50", offset = "0" } = req.query as Record<string, string>;
-
-  let query = db.select().from(postsTable).where(eq(postsTable.userId, clerkId));
 
   const posts = await db.select().from(postsTable)
     .where(sql`${postsTable.userId} = ${clerkId}
@@ -31,7 +30,13 @@ router.get("/posts", requireAuth, async (req, res): Promise<void> => {
 
 router.post("/posts", requireAuth, async (req, res): Promise<void> => {
   const clerkId = (req as any).clerkId;
-  const { content, platforms, scheduledAt, mediaUrls } = req.body;
+  const { content, platforms, scheduledAt, mediaUrls, accountIds } = req.body as {
+    content: string;
+    platforms: string[];
+    scheduledAt?: string | null;
+    mediaUrls?: string[];
+    accountIds?: number[];
+  };
 
   if (!content || !platforms || !Array.isArray(platforms) || platforms.length === 0) {
     res.status(400).json({ error: "content and platforms are required" });
@@ -43,6 +48,41 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
+  const user = await getOrCreateUser(clerkId);
+
+  // If user has Post Bridge configured AND account IDs were provided, publish for real
+  if (user.postBridgeApiKey && accountIds && accountIds.length > 0) {
+    try {
+      const pbPost = await pbCreatePost(user.postBridgeApiKey, {
+        caption: content,
+        socialAccountIds: accountIds,
+        scheduledAt: scheduledAt ?? null,
+        mediaUrls: mediaUrls ?? [],
+      });
+
+      // Determine status from Post Bridge response
+      const status = scheduledAt ? "scheduled" : "published";
+      const publishedAt = scheduledAt ? null : new Date();
+
+      const [post] = await db.insert(postsTable).values({
+        userId: clerkId,
+        content,
+        platforms,
+        status,
+        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+        publishedAt,
+        mediaUrls: mediaUrls ?? [],
+      }).returning();
+
+      res.status(201).json({ ...post, postBridgeId: pbPost.id });
+      return;
+    } catch (err: any) {
+      res.status(502).json({ error: `Post Bridge publish failed: ${err.message}` });
+      return;
+    }
+  }
+
+  // No Post Bridge key or no account IDs — store locally only (draft/pending)
   const status = scheduledAt ? "scheduled" : "published";
   const publishedAt = scheduledAt ? null : new Date();
 

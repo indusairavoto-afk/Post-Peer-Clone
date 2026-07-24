@@ -14,4 +14,6 @@ export interface PostInput {
   /** @nullable */
   scheduledAt?: string | null;
   mediaUrls?: string[];
+  /** Post Bridge account IDs to publish to. When provided with a configured Post Bridge key, publishes for real. */
+  accountIds?: number[];
 }

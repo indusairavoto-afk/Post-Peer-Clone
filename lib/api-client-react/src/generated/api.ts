@@ -32,7 +32,8 @@ import type {
   PostInput,
   PostList,
   StartPlatformOAuth503,
-  UserProfile
+  UserProfile,
+  UserSettingsInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1116,4 +1117,75 @@ export function useGetUserProfile<TData = Awaited<ReturnType<typeof getUserProfi
 
 
 
+
+export const getUpdateUserSettingsUrl = () => {
+
+
+
+
+  return `/api/user/settings`
+}
+
+/**
+ * @summary Update user settings (e.g. Post Bridge API key)
+ */
+export const updateUserSettings = async (userSettingsInput: UserSettingsInput, options?: RequestInit): Promise<UserProfile> => {
+
+  return customFetch<UserProfile>(getUpdateUserSettingsUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(userSettingsInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateUserSettingsMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUserSettings>>, TError,{data: BodyType<UserSettingsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateUserSettings>>, TError,{data: BodyType<UserSettingsInput>}, TContext> => {
+
+const mutationKey = ['updateUserSettings'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateUserSettings>>, {data: BodyType<UserSettingsInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateUserSettings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateUserSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updateUserSettings>>>
+    export type UpdateUserSettingsMutationBody = BodyType<UserSettingsInput>
+    export type UpdateUserSettingsMutationError = ErrorType<void>
+
+    /**
+ * @summary Update user settings (e.g. Post Bridge API key)
+ */
+export const useUpdateUserSettings = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUserSettings>>, TError,{data: BodyType<UserSettingsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateUserSettings>>,
+        TError,
+        {data: BodyType<UserSettingsInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateUserSettingsMutationOptions(options));
+    }
 

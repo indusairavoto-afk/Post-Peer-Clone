@@ -8,6 +8,7 @@ export const usersTable = pgTable("users", {
   email: text("email").notNull(),
   name: text("name").notNull().default(""),
   plan: text("plan").notNull().default("free"),
+  postBridgeApiKey: text("post_bridge_api_key"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

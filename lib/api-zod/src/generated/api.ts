@@ -72,7 +72,8 @@ export const CreatePostBody = zod.object({
   "content": zod.string().min(1),
   "platforms": zod.array(zod.string()).min(1),
   "scheduledAt": zod.string().nullish(),
-  "mediaUrls": zod.array(zod.string()).optional()
+  "mediaUrls": zod.array(zod.string()).optional(),
+  "accountIds": zod.array(zod.number()).optional().describe('Post Bridge account IDs to publish to. When provided with a configured Post Bridge key, publishes for real.')
 })
 
 export const CreatePostResponse = zod.object({
@@ -145,8 +146,10 @@ export const ListConnectedPlatformsResponse = zod.object({
   "accountName": zod.string(),
   "accountHandle": zod.string(),
   "status": zod.enum(['connected', 'disconnected', 'unverified']),
-  "connectedAt": zod.string()
-}))
+  "connectedAt": zod.string(),
+  "postBridgeAccountId": zod.number().optional()
+})),
+  "postBridgeConfigured": zod.boolean().optional()
 })
 
 
@@ -224,6 +227,25 @@ export const GetUserProfileResponse = zod.object({
   "email": zod.string(),
   "name": zod.string(),
   "plan": zod.enum(['free', 'starter', 'standard', 'pro']),
+  "hasPostBridgeKey": zod.boolean().optional(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Update user settings (e.g. Post Bridge API key)
+ */
+export const UpdateUserSettingsBody = zod.object({
+  "postBridgeApiKey": zod.string().nullish()
+})
+
+export const UpdateUserSettingsResponse = zod.object({
+  "id": zod.number(),
+  "clerkId": zod.string(),
+  "email": zod.string(),
+  "name": zod.string(),
+  "plan": zod.enum(['free', 'starter', 'standard', 'pro']),
+  "hasPostBridgeKey": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
