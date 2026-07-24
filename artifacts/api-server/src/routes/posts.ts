@@ -1,9 +1,9 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { postsTable } from "@workspace/db";
-import { eq, desc, sql, count } from "drizzle-orm";
+import { postsTable, platformTokensTable } from "@workspace/db";
+import { eq, desc, sql, count, inArray } from "drizzle-orm";
 import { requireAuth, getOrCreateUser } from "../lib/auth";
-import { createPost as pbCreatePost, listAccounts } from "../lib/postbridge";
+import { publishToPlatform } from "../lib/publish";
 
 const router: IRouter = Router();
 
@@ -30,103 +30,93 @@ router.get("/posts", requireAuth, async (req, res): Promise<void> => {
 
 router.post("/posts", requireAuth, async (req, res): Promise<void> => {
   const clerkId = (req as any).clerkId;
-  const { content, platforms, scheduledAt, mediaUrls, accountIds } = req.body as {
+  const { content, platforms, scheduledAt, mediaUrls, tokenIds } = req.body as {
     content: string;
-    platforms: string[];
+    platforms: string[];       // platform names e.g. ["twitter", "bluesky"]
     scheduledAt?: string | null;
     mediaUrls?: string[];
-    accountIds?: number[];
+    tokenIds?: number[];       // platform_tokens.id rows to publish to
   };
 
   if (!content || !platforms || !Array.isArray(platforms) || platforms.length === 0) {
     res.status(400).json({ error: "content and platforms are required" });
     return;
   }
-
   if (scheduledAt && new Date(scheduledAt) <= new Date()) {
     res.status(400).json({ error: "scheduledAt must be a future date" });
     return;
   }
 
-  const user = await getOrCreateUser(clerkId);
-
-  // If user has Post Bridge configured AND account IDs were provided, publish for real
-  if (user.postBridgeApiKey && accountIds && accountIds.length > 0) {
-    try {
-      const pbPost = await pbCreatePost(user.postBridgeApiKey, {
-        caption: content,
-        socialAccountIds: accountIds,
-        scheduledAt: scheduledAt ?? null,
-        mediaUrls: mediaUrls ?? [],
-      });
-
-      // Determine status from Post Bridge response
-      const status = scheduledAt ? "scheduled" : "published";
-      const publishedAt = scheduledAt ? null : new Date();
-
-      const [post] = await db.insert(postsTable).values({
-        userId: clerkId,
-        content,
-        platforms,
-        status,
-        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-        publishedAt,
-        mediaUrls: mediaUrls ?? [],
-      }).returning();
-
-      res.status(201).json({ ...post, postBridgeId: pbPost.id });
-      return;
-    } catch (err: any) {
-      res.status(502).json({ error: `Post Bridge publish failed: ${err.message}` });
-      return;
-    }
-  }
-
-  // No Post Bridge key or no account IDs — store locally only (draft/pending)
-  const status = scheduledAt ? "scheduled" : "published";
-  const publishedAt = scheduledAt ? null : new Date();
-
+  // Determine status and save local record first
+  const isScheduled = !!scheduledAt;
   const [post] = await db.insert(postsTable).values({
     userId: clerkId,
     content,
     platforms,
-    status,
+    status: isScheduled ? "scheduled" : "published",
     scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-    publishedAt,
+    publishedAt: isScheduled ? null : new Date(),
     mediaUrls: mediaUrls ?? [],
   }).returning();
 
-  res.status(201).json(post);
+  // If we have token IDs and it's a "post now", publish to each platform
+  if (!isScheduled && tokenIds && tokenIds.length > 0) {
+    const tokens = await db
+      .select()
+      .from(platformTokensTable)
+      .where(
+        sql`${platformTokensTable.id} = ANY(ARRAY[${sql.join(tokenIds.map(id => sql`${id}`), sql`, `)}]::int[])
+          AND ${platformTokensTable.userId} = ${clerkId}`
+      );
+
+    const results = await Promise.allSettled(
+      tokens.map((tok) => publishToPlatform(tok, content, mediaUrls))
+    );
+
+    const failures = results
+      .map((r) => (r.status === "fulfilled" ? r.value : { success: false, error: (r as any).reason?.message }))
+      .filter((r) => !r.success);
+
+    if (failures.length === tokens.length && tokens.length > 0) {
+      // All failed — mark post as failed
+      await db.update(postsTable).set({ status: "failed" }).where(eq(postsTable.id, post.id));
+      res.status(502).json({
+        post: { ...post, status: "failed" },
+        errors: failures.map((f) => ({ platform: f.platform, error: f.error })),
+      });
+      return;
+    }
+
+    res.status(201).json({
+      post,
+      results: results.map((r) => (r.status === "fulfilled" ? r.value : { success: false, error: (r as any).reason?.message })),
+    });
+    return;
+  }
+
+  res.status(201).json({ post });
 });
 
 router.get("/posts/:id", requireAuth, async (req, res): Promise<void> => {
   const clerkId = (req as any).clerkId;
-  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(raw, 10);
+  const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
 
   const [post] = await db.select().from(postsTable)
     .where(sql`${postsTable.id} = ${id} AND ${postsTable.userId} = ${clerkId}`);
 
-  if (!post) {
-    res.status(404).json({ error: "Post not found" });
-    return;
-  }
+  if (!post) { res.status(404).json({ error: "Post not found" }); return; }
   res.json(post);
 });
 
 router.delete("/posts/:id", requireAuth, async (req, res): Promise<void> => {
   const clerkId = (req as any).clerkId;
-  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(raw, 10);
+  const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
 
   const [deleted] = await db.delete(postsTable)
     .where(sql`${postsTable.id} = ${id} AND ${postsTable.userId} = ${clerkId}`)
     .returning();
 
-  if (!deleted) {
-    res.status(404).json({ error: "Post not found" });
-    return;
-  }
+  if (!deleted) { res.status(404).json({ error: "Post not found" }); return; }
   res.sendStatus(204);
 });
 

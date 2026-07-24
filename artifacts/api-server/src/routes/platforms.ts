@@ -1,57 +1,54 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { usersTable } from "@workspace/db";
+import { platformTokensTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, getOrCreateUser } from "../lib/auth";
-import { listAccounts } from "../lib/postbridge";
+import { isPlatformConfigured, PLATFORM_CONFIGS } from "../lib/oauth";
 
-const ALL_PLATFORMS = [
-  { id: "twitter", name: "Twitter / X", icon: "FaTwitter", color: "#1DA1F2", maxLength: 280, supportsMedia: true },
-  { id: "instagram", name: "Instagram", icon: "FaInstagram", color: "#E1306C", maxLength: 2200, supportsMedia: true },
-  { id: "facebook", name: "Facebook", icon: "FaFacebook", color: "#1877F2", maxLength: 63206, supportsMedia: true },
-  { id: "linkedin", name: "LinkedIn", icon: "FaLinkedin", color: "#0A66C2", maxLength: 3000, supportsMedia: true },
-  { id: "tiktok", name: "TikTok", icon: "FaTiktok", color: "#69C9D0", maxLength: 2200, supportsMedia: true },
-  { id: "youtube", name: "YouTube", icon: "FaYoutube", color: "#FF0000", maxLength: 5000, supportsMedia: true },
-  { id: "pinterest", name: "Pinterest", icon: "FaPinterest", color: "#E60023", maxLength: 500, supportsMedia: true },
-  { id: "bluesky", name: "Bluesky", icon: "SiBluesky", color: "#0085FF", maxLength: 300, supportsMedia: true },
-  { id: "threads", name: "Threads", icon: "SiThreads", color: "#ffffff", maxLength: 500, supportsMedia: true },
+export const ALL_PLATFORMS = [
+  { id: "twitter",   name: "Twitter / X", color: "#1DA1F2", maxLength: 280,   supportsMedia: true,  requiresMedia: false },
+  { id: "instagram", name: "Instagram",   color: "#E1306C", maxLength: 2200,  supportsMedia: true,  requiresMedia: true  },
+  { id: "facebook",  name: "Facebook",    color: "#1877F2", maxLength: 63206, supportsMedia: true,  requiresMedia: false },
+  { id: "linkedin",  name: "LinkedIn",    color: "#0A66C2", maxLength: 3000,  supportsMedia: true,  requiresMedia: false },
+  { id: "tiktok",    name: "TikTok",      color: "#69C9D0", maxLength: 2200,  supportsMedia: true,  requiresMedia: true  },
+  { id: "youtube",   name: "YouTube",     color: "#FF0000", maxLength: 5000,  supportsMedia: true,  requiresMedia: true  },
+  { id: "pinterest", name: "Pinterest",   color: "#E60023", maxLength: 500,   supportsMedia: true,  requiresMedia: true  },
+  { id: "bluesky",   name: "Bluesky",     color: "#0085FF", maxLength: 300,   supportsMedia: false, requiresMedia: false },
+  { id: "threads",   name: "Threads",     color: "#aaaaaa", maxLength: 500,   supportsMedia: true,  requiresMedia: false },
 ];
 
 const router: IRouter = Router();
 
 router.get("/platforms", async (_req, res): Promise<void> => {
-  res.json({ platforms: ALL_PLATFORMS });
+  const platforms = ALL_PLATFORMS.map((p) => ({
+    ...p,
+    oauthConfigured: isPlatformConfigured(p.id),
+    oauthStartUrl: `/api/oauth/start/${p.id}`,
+    requiredEnvVars: p.id !== "bluesky"
+      ? [PLATFORM_CONFIGS[p.id]?.clientIdEnv, PLATFORM_CONFIGS[p.id]?.clientSecretEnv].filter(Boolean)
+      : [],
+  }));
+  res.json({ platforms });
 });
 
-/**
- * List connected platforms.
- * If the user has a Post Bridge API key, returns live accounts from Post Bridge.
- * Otherwise returns an empty list — no fake connections allowed.
- */
 router.get("/platforms/connected", requireAuth, async (req, res): Promise<void> => {
   const clerkId = (req as any).clerkId;
 
-  const user = await getOrCreateUser(clerkId);
-  if (!user.postBridgeApiKey) {
-    res.json({ platforms: [], postBridgeConfigured: false });
-    return;
-  }
+  const rows = await db
+    .select()
+    .from(platformTokensTable)
+    .where(eq(platformTokensTable.userId, clerkId));
 
-  try {
-    const accounts = await listAccounts(user.postBridgeApiKey);
-    const platforms = accounts.map((acc) => ({
-      id: String(acc.id),
-      platform: acc.platform,
-      accountName: acc.name ?? acc.username,
-      accountHandle: acc.username,
-      status: "connected",
-      connectedAt: new Date().toISOString(),
-      postBridgeAccountId: acc.id,
-    }));
-    res.json({ platforms, postBridgeConfigured: true });
-  } catch (err: any) {
-    res.status(502).json({ error: `Post Bridge error: ${err.message}` });
-  }
+  const platforms = rows.map((r) => ({
+    id: String(r.id),
+    platform: r.platform,
+    accountName: r.accountName,
+    accountHandle: r.accountHandle,
+    status: "connected",
+    connectedAt: r.createdAt.toISOString(),
+  }));
+
+  res.json({ platforms });
 });
 
 export default router;
